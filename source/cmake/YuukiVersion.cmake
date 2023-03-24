@@ -10,7 +10,7 @@ execute_process(COMMAND
     )
 
 if(NOT "${MOD_BUILD}" STREQUAL "Asuna")
-    set(X265_BASE_BRANCH "stable")
+    set(X265_BASE_BRANCH "bitbucket-git")
 else()
     set(X265_BASE_BRANCH "old-stable")
 endif()
