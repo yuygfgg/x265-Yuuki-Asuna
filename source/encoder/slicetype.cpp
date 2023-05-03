@@ -1803,6 +1803,14 @@ void Lookahead::slicetypeDecide()
 
         Frame *curFrame = m_inputQueue.first();
         int j;
+		if (m_param->bResetZoneConfig)
+		{
+			for (int i = 0; i < m_param->rc.zonefileCount; i++)
+			{
+				if (m_param->rc.zones[i].startFrame == curFrame->m_poc)
+					m_param = m_param->rc.zones[i].zoneParam;
+			}
+		}
         for (j = 0; j < m_param->bframes + 2; j++)
         {
             if (!curFrame) break;
@@ -2608,6 +2616,8 @@ void Lookahead::slicetypeAnalyse(Lowres **frames, bool bKeyframe)
             nextZoneStart += (i + 1 < m_param->rc.zonefileCount) ? m_param->rc.zones[i + 1].startFrame + m_param->rc.zones[i + 1].zoneParam->radl : m_param->totalFrames;
             if (curZoneStart <= frames[0]->frameNum && nextZoneStart > frames[0]->frameNum)
                 m_param->keyframeMax = nextZoneStart - curZoneStart;
+            if ((i + 1 == m_param->rc.zonefileCount) && nextZoneStart == 0)
+                m_param->keyframeMax = m_param->rc.zones[0].keyframeMax;
         }
     }
     int keylimit = m_param->keyframeMax;
