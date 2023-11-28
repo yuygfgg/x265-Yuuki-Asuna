@@ -22,6 +22,9 @@
  * For more information, contact us at license @ x265.com.
  *****************************************************************************/
 
+#ifndef ASM_S_  // #include guards
+#define ASM_S_
+
 .arch           armv8-a
 
 #define PFX3(prefix, name) prefix ## _ ## name
@@ -180,3 +183,5 @@ ELF     .size   \name, . - \name
     vtrn            \t1, \t2, \s1, \s2
     vtrn            \t3, \t4, \s3, \s4
 .endm
+
+#endif
