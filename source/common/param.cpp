@@ -2360,12 +2360,6 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bAQMotion, "aq-motion");
     s += sprintf(s, " cbqpoffs=%d", p->cbQpOffset);
     s += sprintf(s, " crqpoffs=%d", p->crQpOffset);
-    if (!(p->rc.rateControlMode == X265_RC_CQP && p->rc.qp == 0))
-    {
-        s += sprintf(s, " ipratio=%.2f", p->rc.ipFactor);
-        if (p->bframes)
-            s += sprintf(s, " pbratio=%.2f", p->rc.pbFactor);
-    }
 
     s += sprintf(s, " rd=%d", p->rdLevel);
     s += sprintf(s, " rdoq-level=%d", p->rdoqLevel);
@@ -2390,13 +2384,6 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += sprintf(s, " min-keyint=%d", p->keyframeMin);
     s += sprintf(s, " max-keyint=%d", p->keyframeMax);
 
-    s += sprintf(s, " rc-lookahead=%d", p->lookaheadDepth);
-    s += sprintf(s, " gop-lookahead=%d", p->gopLookahead);
-
-    s += sprintf(s, " scenecut=%d", p->scenecutThreshold);
-    s += sprintf(s, " hist-scenecut=%d", p->bHistBasedSceneCut);
-    s += sprintf(s, " radl=%d", p->radl);
-
     s += sprintf(s, " max-cu-size=%d", p->maxCUSize);
     s += sprintf(s, " min-cu-size=%d", p->minCUSize);
     s += sprintf(s, " qg-size=%d", p->rc.qgSize);
@@ -2413,8 +2400,8 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bEnableHME, "hme");
     if (p->bEnableHME)
     {
-        s += sprintf(s, " level-0,1,2=%d,%d,%d", p->hmeSearchMethod[0], p->hmeSearchMethod[1], p->hmeSearchMethod[2]);
-        s += sprintf(s, " merange-L0,L1,L2=%d,%d,%d", p->hmeRange[0], p->hmeRange[1], p->hmeRange[2]);
+        s += sprintf(s, " hme-level-0,1,2=%d,%d,%d", p->hmeSearchMethod[0], p->hmeSearchMethod[1], p->hmeSearchMethod[2]);
+        s += sprintf(s, " hme-range-L0,L1,L2=%d,%d,%d", p->hmeRange[0], p->hmeRange[1], p->hmeRange[2]);
     }
     else
     {
@@ -2430,7 +2417,18 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->rc.cuTree, "cutree");
     BOOL(p->bEnableRectInter, "rect");
     BOOL(p->bEnableAMP, "amp");
+    s += sprintf(s, " scenecut=%d", p->scenecutThreshold);
+    s += sprintf(s, " hist-scenecut=%d", p->bHistBasedSceneCut);
+
+    s += sprintf(s, " rc-lookahead=%d", p->lookaheadDepth);
+    s += sprintf(s, " gop-lookahead=%d", p->gopLookahead);
     BOOL(p->bOpenGOP, "open-gop");
+    if (!(p->rc.rateControlMode == X265_RC_CQP && p->rc.qp == 0))
+    {
+        s += sprintf(s, " ipratio=%.2f", p->rc.ipFactor);
+        if (p->bframes)
+            s += sprintf(s, " pbratio=%.2f", p->rc.pbFactor);
+    }
     BOOL(p->bEnableWavefront, "wpp");
     s += sprintf(s, " cpuid=%d", p->cpuid);
     s += sprintf(s, " frame-threads=%d", p->frameNumThreads);
@@ -2450,11 +2448,13 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += sprintf(s, " qpmax=%d qpmin=%d", p->rc.qpMax, p->rc.qpMin);
     BOOL(p->rc.bEnableGrain, "rc-grain");
     s += sprintf(s, " slices=%d", p->maxSlices);
+    s += sprintf(s, " lookahead-slices=%d", p->lookaheadSlices);
 
     s += sprintf(s, " -----");
 
     // Who cares?
 
+    s += sprintf(s, " radl=%d", p->radl);
     BOOL(p->bDistributeModeAnalysis, "pmode");
     BOOL(p->bDistributeMotionEstimation, "pme");
     BOOL(p->bEnablePsnr, "psnr");
@@ -2483,7 +2483,6 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bEmitInfoSEI, "info");
     s += sprintf(s, " hash=%d", p->decodedPictureHashSEI);
     BOOL(p->bEnableTemporalSubLayers, "temporal-layers");
-    s += sprintf(s, " lookahead-slices=%d", p->lookaheadSlices);
     BOOL(p->bEnableHRDConcatFlag, "splice");
     BOOL(p->bIntraRefresh, "intra-refresh");
     BOOL(p->bSsimRd, "ssim-rd");
