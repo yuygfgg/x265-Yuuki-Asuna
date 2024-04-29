@@ -2447,6 +2447,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
 
     s += sprintf(s, " qpmax=%d qpmin=%d", p->rc.qpMax, p->rc.qpMin);
     BOOL(p->rc.bEnableGrain, "rc-grain");
+    BOOL(p->bSsimRd, "ssim-rd");
     s += sprintf(s, " slices=%d", p->maxSlices);
     s += sprintf(s, " lookahead-slices=%d", p->lookaheadSlices);
 
@@ -2485,7 +2486,6 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     BOOL(p->bEnableTemporalSubLayers, "temporal-layers");
     BOOL(p->bEnableHRDConcatFlag, "splice");
     BOOL(p->bIntraRefresh, "intra-refresh");
-    BOOL(p->bSsimRd, "ssim-rd");
     BOOL(p->bEnableSignHiding, "signhide");
     BOOL(p->bEnableTransformSkip, "tskip");
     s += sprintf(s, " max-merge=%d", p->maxNumMergeCand);
