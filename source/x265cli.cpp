@@ -531,7 +531,7 @@ namespace X265_NS {
             estsz_prec = estsz < 1024000 ? 2 : estsz < 10240000 ? 1 : 0;
             estsz_num  = estsz < 1024 ? estsz : estsz / 1024;
             estsz_unit = estsz < 1024 ? "K" : "M";
-            sprintf(buf, "x265 [%.1f%%] %d/%d frames, %.*f fps, %.*f kb/s, %d:%02d:%02d, %.*f %sB, ~%d:%02d:%02d, ~%.*f %sB",
+            sprintf(buf, "x265 [%.1f%%] %d/%d frames, %.*f fps, %.*f kb/s, %d:%02d:%02d, %.*f %sB, -%d:%02d:%02d, ~%.*f %sB",
                     percentage, frameNum, (param->chunkEnd ? param->chunkEnd : param->totalFrames), fps_prec, fps, bitrate_prec, bitrate,
                     ela_hh, ela_mm, ela_ss,
                     file_prec, file_num, file_unit,
