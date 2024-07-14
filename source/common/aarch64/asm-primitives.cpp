@@ -689,6 +689,7 @@ extern "C" {
 #include "dct-prim.h"
 #include "loopfilter-prim.h"
 #include "intrapred-prim.h"
+#include "sao-prim.h"
 
 namespace X265_NS
 {
@@ -708,12 +709,6 @@ void interp_8tap_hv_pp_cpu(const pixel *src, intptr_t srcStride, pixel *dst, int
 
 void setupNeonPrimitives(EncoderPrimitives &p)
 {
-    setupPixelPrimitives_neon(p);
-    setupFilterPrimitives_neon(p);
-    setupDCTPrimitives_neon(p);
-    setupLoopFilterPrimitives_neon(p);
-    setupIntraPrimitives_neon(p);
-
     ALL_CHROMA_420_PU(p2s[NONALIGNED], filterPixelToShort, neon);
     ALL_CHROMA_422_PU(p2s[ALIGNED], filterPixelToShort, neon);
     ALL_CHROMA_444_PU(p2s[ALIGNED], filterPixelToShort, neon);
@@ -1083,14 +1078,6 @@ void setupNeonPrimitives(EncoderPrimitives &p)
 #if defined(HAVE_SVE2) || defined(HAVE_SVE)
 void setupSvePrimitives(EncoderPrimitives &p)
 {
-    // When these primitives will use SVE/SVE2 instructions set,
-    // change the following definitions to point to the SVE/SVE2 implementation
-    setupPixelPrimitives_neon(p);
-    setupFilterPrimitives_neon(p);
-    setupDCTPrimitives_neon(p);
-    setupLoopFilterPrimitives_neon(p);
-    setupIntraPrimitives_neon(p);
-
     CHROMA_420_PU_FILTER_PIXEL_TO_SHORT_NEON(p2s[NONALIGNED]);
     CHROMA_420_PU_SVE_FILTER_PIXEL_TO_SHORT(p2s[NONALIGNED]);
     CHROMA_422_PU_NEON_FILTER_PIXEL_TO_SHORT(p2s[ALIGNED]);
@@ -1499,14 +1486,6 @@ void setupSvePrimitives(EncoderPrimitives &p)
 #if defined(HAVE_SVE2)
 void setupSve2Primitives(EncoderPrimitives &p)
 {
-    // When these primitives will use SVE/SVE2 instructions set,
-    // change the following definitions to point to the SVE/SVE2 implementation
-    setupPixelPrimitives_neon(p);
-    setupFilterPrimitives_neon(p);
-    setupDCTPrimitives_neon(p);
-    setupLoopFilterPrimitives_neon(p);
-    setupIntraPrimitives_neon(p);
-
     CHROMA_420_PU_FILTER_PIXEL_TO_SHORT_NEON(p2s[NONALIGNED]);
     CHROMA_420_PU_SVE_FILTER_PIXEL_TO_SHORT(p2s[NONALIGNED]);
     CHROMA_422_PU_NEON_FILTER_PIXEL_TO_SHORT(p2s[ALIGNED]);
@@ -1961,4 +1940,24 @@ void setupAssemblyPrimitives(EncoderPrimitives &p, int cpuMask)
 #endif
 
 }
+
+void setupIntrinsicPrimitives(EncoderPrimitives &p, int cpuMask)
+{
+    if (cpuMask & X265_CPU_NEON)
+    {
+        setupPixelPrimitives_neon(p);
+        setupFilterPrimitives_neon(p);
+        setupDCTPrimitives_neon(p);
+        setupLoopFilterPrimitives_neon(p);
+        setupIntraPrimitives_neon(p);
+        setupSaoPrimitives_neon(p);
+    }
+#if defined(HAVE_SVE) && HAVE_SVE_BRIDGE
+    if (cpuMask & X265_CPU_SVE)
+    {
+        setupSaoPrimitives_sve(p);
+    }
+#endif
+}
+
 } // namespace X265_NS
