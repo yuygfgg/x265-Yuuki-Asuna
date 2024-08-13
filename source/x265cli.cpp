@@ -411,6 +411,17 @@ namespace X265_NS {
         H0("   --[no-]frame-dup              Enable Frame duplication. Default %s\n", OPT(param->bEnableFrameDuplication));
         H0("   --dup-threshold <integer>     PSNR threshold for Frame duplication. Default %d\n", param->dupThreshold);
         H0("   --[no-]mcstf                  Enable GOP based temporal filter. Default %d\n", param->bEnableTemporalFilter);
+#if ENABLE_ALPHA
+        H0("   --alpha                       Enable alpha channel support. Default %d\n", param->bEnableAlpha);
+#endif
+#if ENABLE_MULTIVIEW
+        H0("   --num-views                   Number of Views for Multiview Encoding. Default %d\n", param->numViews);
+        H0("   --format                      Format of the input video 0 : normal, 1 : side-by-side, 2 : over-under  Default %d\n", param->format);
+        H0("   --multiview-config            Configuration file for Multiview Encoding\n");
+#endif
+#if ENABLE_SCC_EXT
+        H0("   --scc <integer>               Enable screen content coding. 0: Diabled, 1:Intrablockcopy fast search with 1x2 CTUs search range, 2: Intrablockcopy Full search. Default %d\n", param->bEnableSCC);
+#endif
 #ifdef SVT_HEVC
         H0("   --[no]svt                     Enable SVT HEVC encoder %s\n", OPT(param->bEnableSvtHevc));
         H0("   --[no-]svt-hme                Enable Hierarchial motion estimation(HME) in SVT HEVC encoder \n");
@@ -453,12 +464,18 @@ namespace X265_NS {
             free(argString);
         }
 
-        if (input)
-            input->release();
-        input = NULL;
-        if (recon)
-            recon->release();
-        recon = NULL;
+        for (int i = 0; i < MAX_VIEWS; i++)
+        {
+            if (input[i])
+                input[i]->release();
+            input[i] = NULL;
+        }
+        for (int i = 0; i < MAX_LAYERS; i++)
+        {
+            if (recon[i])
+                recon[i]->release();
+            recon[i] = NULL;
+        }
         if (qpfile)
             fclose(qpfile);
         qpfile = NULL;
@@ -687,8 +704,12 @@ namespace X265_NS {
         int inputBitDepth = 8;
         int outputBitDepth = 0;
         int reconFileBitDepth = 0;
-        const char *inputfn = NULL;
-        const char *reconfn = NULL;
+        char* inputfn[MAX_VIEWS] = { NULL };
+        for (int view = 0; view < MAX_VIEWS; view++)
+        {
+            inputfn[view] = X265_MALLOC(char, sizeof(char) * 1024);
+        }
+        const char* reconfn[MAX_LAYERS] = { NULL };
         const char *outputfn = NULL;
         const char *preset = NULL;
         const char *tune = NULL;
@@ -827,8 +848,8 @@ namespace X265_NS {
                 OPT("frames") this->framesToBeEncoded = (uint32_t)x265_atoi(optarg, bError);
                 OPT("no-progress") this->bProgress = false;
                 OPT("output") outputfn = optarg;
-                OPT("input") inputfn = optarg;
-                OPT("recon") reconfn = optarg;
+                OPT("input") inputfn[0] = optarg;
+                OPT("recon") reconfn[0] = optarg;
                 OPT("input-depth") inputBitDepth = (uint32_t)x265_atoi(optarg, bError);
                 OPT("dither") this->bDither = true;
                 OPT("recon-depth") reconFileBitDepth = (uint32_t)x265_atoi(optarg, bError);
@@ -861,6 +882,14 @@ namespace X265_NS {
                     if (!this->scenecutAwareQpConfig)
                         x265_log_file(param, X265_LOG_ERROR, "%s scenecut aware qp config file not found or error in opening config file\n", optarg);
                 }
+#if ENABLE_MULTIVIEW
+                OPT("multiview-config")
+                {
+                    this->multiViewConfig = x265_fopen(optarg, "rb");
+                    if (!this->multiViewConfig)
+                        x265_log_file(param, X265_LOG_ERROR, "%s Multiview config file not found or error in opening config file\n", optarg);
+                }
+#endif
                 OPT("zonefile")
                 {
                     this->zoneFile = x265_fopen(optarg, "rb");
@@ -888,8 +917,10 @@ namespace X265_NS {
             }
         }
 
-        if (optind < argc && !inputfn)
-            inputfn = argv[optind++];
+#if !ENABLE_MULTIVIEW
+        if (optind < argc && !inputfn[0])
+            inputfn[0] = argv[optind++];
+#endif
         if (optind < argc && !outputfn)
             outputfn = argv[optind++];
         if (optind < argc)
@@ -905,9 +936,29 @@ namespace X265_NS {
             showHelp(param);
         }
 
-        if (!inputfn || !outputfn)
+#if ENABLE_MULTIVIEW
+        if (this->multiViewConfig)
+        {
+            if (!this->parseMultiViewConfig(inputfn))
+            {
+                x265_log(NULL, X265_LOG_ERROR, "Unable to parse multiview config file \n");
+                fclose(this->multiViewConfig);
+                this->multiViewConfig = NULL;
+            }
+        }
+#endif
+        param->numLayers = param->numViews > 1 ? param->numViews : (param->numScalableLayers > 1) ? param->numScalableLayers : 1;
+        if (!outputfn)
         {
             x265_log(param, X265_LOG_ERROR, "input or output file not specified, try --help for help\n");
+            for (int view = 0; view < param->numViews; view++)
+            {
+                if (!inputfn[view])
+                {
+                    x265_log(param, X265_LOG_ERROR, "input or output file not specified, try --help for help\n");
+                    return true;
+                }
+            }
             return true;
         }
 
@@ -928,38 +979,41 @@ namespace X265_NS {
             svtParam->encoderBitDepth = inputBitDepth;
         }
 #endif
-
-        InputFileInfo info;
-        info.filename = inputfn;
-        info.depth = inputBitDepth;
-        info.csp = param->internalCsp;
-        info.width = param->sourceWidth;
-        info.height = param->sourceHeight;
-        info.fpsNum = param->fpsNum;
-        info.fpsDenom = param->fpsDenom;
-        info.sarWidth = param->vui.sarWidth;
-        info.sarHeight = param->vui.sarHeight;
-        info.skipFrames = seek;
-        info.encodeToFrame = this->framesToBeEncoded;
-        info.frameCount = 0;
-        getParamAspectRatio(param, info.sarWidth, info.sarHeight);
-
-        /* pass readerOpts to InputFileInfo in case certain reader wants it */
-        info.readerOpts = this->readerOpts;
-
-        this->input = InputFile::open(info, this->bForceY4m);
-        if (!this->input || this->input->isFail())
+        InputFileInfo info[MAX_VIEWS];
+        for (int i = 0; i < param->numViews - !!param->format; i++)
         {
-            x265_log_file(param, X265_LOG_ERROR, "unable to open input file <%s>\n", inputfn);
-            return true;
+            info[i].filename = inputfn[i];
+            info[i].depth = inputBitDepth;
+            info[i].csp = param->internalCsp;
+            info[i].width = param->sourceWidth;
+            info[i].height = param->sourceHeight;
+            info[i].fpsNum = param->fpsNum;
+            info[i].fpsDenom = param->fpsDenom;
+            info[i].sarWidth = param->vui.sarWidth;
+            info[i].sarHeight = param->vui.sarHeight;
+            info[i].skipFrames = seek;
+            info.encodeToFrame = this->framesToBeEncoded;
+            info[i].frameCount = 0;
+            getParamAspectRatio(param, info[i].sarWidth, info[i].sarHeight);
+
+            /* pass readerOpts to InputFileInfo in case certain reader wants it */
+            info.readerOpts = this->readerOpts;
+
+            this->input[i] = InputFile::open(info[i], this->bForceY4m, param->numScalableLayers > 1, param->format);
+            if (!this->input[i] || this->input[i]->isFail())
+            {
+                x265_log_file(param, X265_LOG_ERROR, "unable to open input file <%s>\n", inputfn[i]);
+                return true;
+            }
+
+            if (info[i].depth < 8 || info[i].depth > 16)
+            {
+                x265_log(param, X265_LOG_ERROR, "Input bit depth (%d) must be between 8 and 16\n", inputBitDepth);
+                return true;
+            }
         }
 
-        if (info.depth < 8 || info.depth > 16)
-        {
-            x265_log(param, X265_LOG_ERROR, "Input bit depth (%d) must be between 8 and 16\n", inputBitDepth);
-            return true;
-        }
-
+            //TODO:Validate info params of both the views to equal values
         if (this->vf)
         {
             bool bFail = Filter::parseFilterString(this->vf, &this->filters);
@@ -968,21 +1022,21 @@ namespace X265_NS {
         }
 
         /* Unconditionally accept height/width/csp/bitDepth from file info */
-        param->sourceWidth = info.width;
-        param->sourceHeight = info.height;
-        param->internalCsp = info.csp;
-        param->sourceBitDepth = info.depth;
+            param->sourceWidth = info[0].width;
+            param->sourceHeight = info[0].height;
+            param->internalCsp = info[0].csp;
+            param->sourceBitDepth = info[0].depth;
 
         /* Accept fps and sar from file info if not specified by user */
         if (param->fpsDenom == 0 || param->fpsNum == 0)
         {
-            param->fpsDenom = info.fpsDenom;
-            param->fpsNum = info.fpsNum;
+            param->fpsDenom = info[0].fpsDenom;
+            param->fpsNum = info[0].fpsNum;
         }
-        if (!param->vui.aspectRatioIdc && info.sarWidth && info.sarHeight)
-            setParamAspectRatio(param, info.sarWidth, info.sarHeight);
-        if (this->framesToBeEncoded == 0 && info.frameCount > (int)seek)
-            this->framesToBeEncoded = info.frameCount - seek;
+        if (!param->vui.aspectRatioIdc && info[0].sarWidth && info[0].sarHeight)
+            setParamAspectRatio(param, info[0].sarWidth, info[0].sarHeight);
+        if (this->framesToBeEncoded == 0 && info[0].frameCount > (int)seek)
+            this->framesToBeEncoded = info[0].frameCount - seek;
         param->totalFrames = this->framesToBeEncoded;
 
 #ifdef SVT_HEVC
@@ -999,8 +1053,8 @@ namespace X265_NS {
 #endif
 
         /* Force CFR until we have support for VFR */
-        info.timebaseNum = param->fpsDenom;
-        info.timebaseDenom = param->fpsNum;
+        info[0].timebaseNum = param->fpsDenom;
+        info[0].timebaseDenom = param->fpsNum;
 
         if (param->bField && param->interlaceMode)
         {   // Field FPS
@@ -1018,44 +1072,63 @@ namespace X265_NS {
         {
             char buf[128];
             int p = sprintf(buf, "%dx%d fps %d/%d %sp%d", param->sourceWidth, param->sourceHeight,
-                param->fpsNum, param->fpsDenom, x265_source_csp_names[param->internalCsp], info.depth);
+                param->fpsNum, param->fpsDenom, x265_source_csp_names[param->internalCsp], info[0].depth);
 
             int width, height;
             getParamAspectRatio(param, width, height);
             if (width && height)
                 p += sprintf(buf + p, " sar %d:%d", width, height);
 
-            if (framesToBeEncoded <= 0 || info.frameCount <= 0)
+            if (framesToBeEncoded <= 0 || info[0].frameCount <= 0)
                 strcpy(buf + p, " unknown frame count");
             else
-                sprintf(buf + p, " frames %u - %d of %d", this->seek, this->seek + this->framesToBeEncoded - 1, info.frameCount);
+                sprintf(buf + p, " frames %u - %d of %d", this->seek, this->seek + this->framesToBeEncoded - 1, info[0].frameCount);
 
-            general_log(param, input->getName(), X265_LOG_INFO, "%s\n", buf);
+            for (int view = 0; view < param->numViews - !!param->format; view++)
+                general_log(param, input[view]->getName(), X265_LOG_INFO, "%s\n", buf);
         }
 
-        this->input->startReader();
+        for (int view = 0; view < param->numViews - !!param->format; view++)
+            this->input[view]->startReader();
 
         if (!preset) preset = "medium";
         if (!tune) tune = "none";
         x265_log(param, X265_LOG_INFO, "Using preset %s & tune %s\n", preset, tune);
 
-        if (reconfn)
+        if (reconfn[0])
         {
             if (reconFileBitDepth == 0)
                 reconFileBitDepth = param->internalBitDepth;
-            this->recon = ReconFile::open(reconfn, param->sourceWidth, param->sourceHeight, reconFileBitDepth,
-                param->fpsNum, param->fpsDenom, param->internalCsp, param->sourceBitDepth);
-            if (this->recon->isFail())
+#if ENABLE_ALPHA || ENABLE_MULTIVIEW
+            if (param->bEnableAlpha || param->numViews > 1)
             {
-                x265_log(param, X265_LOG_WARNING, "unable to write reconstructed outputs file\n");
-                this->recon->release();
-                this->recon = 0;
+                char* temp = new char[strlen(reconfn[0])];
+                strcpy(temp, reconfn[0]);
+                const char* token = strtok(temp, ".");
+                for (int view = 0; view < param->numLayers; view++)
+                {
+                    char* buf = new char[strlen(temp) + 7];
+                    sprintf(buf, "%s-%d.yuv", token, view);
+                    reconfn[view] = buf;
+                }
             }
-            else
-                general_log(param, this->recon->getName(), X265_LOG_INFO,
-                "reconstructed images %dx%d fps %d/%d %s\n",
-                param->sourceWidth, param->sourceHeight, param->fpsNum, param->fpsDenom,
-                x265_source_csp_names[param->internalCsp]);
+#endif
+            for (int i = 0; i < param->numLayers; i++)
+            {
+                this->recon[i] = ReconFile::open(reconfn[i], param->sourceWidth, param->sourceHeight, reconFileBitDepth,
+                    param->fpsNum, param->fpsDenom, param->internalCsp, param->sourceBitDepth);
+                if (this->recon[i]->isFail())
+                {
+                    x265_log(param, X265_LOG_WARNING, "unable to write reconstructed outputs file\n");
+                    this->recon[i]->release();
+                    this->recon[i] = 0;
+                }
+                else
+                    general_log(param, this->recon[i]->getName(), X265_LOG_INFO,
+                        "reconstructed images %dx%d fps %d/%d %s\n",
+                        param->sourceWidth, param->sourceHeight, param->fpsNum, param->fpsDenom,
+                        x265_source_csp_names[param->internalCsp]);
+            }
         }
 #if ENABLE_LIBVMAF
         if (!reconfn)
@@ -1081,7 +1154,7 @@ namespace X265_NS {
             return true;
         }
 #endif
-        this->output = OutputFile::open(outputfn, info);
+        this->output = OutputFile::open(outputfn, info[0]);
         if (this->output->isFail())
         {
             x265_log_file(param, X265_LOG_ERROR, "failed to open output file <%s> for writing\n", outputfn);
@@ -1353,6 +1426,142 @@ namespace X265_NS {
         }
         return false;
     }
+
+#if ENABLE_MULTIVIEW
+    bool CLIOptions::parseMultiViewConfig(char** fn)
+    {
+        char line[256];
+        char* argLine;
+        rewind(multiViewConfig);
+        int linenum = 0;
+        int numInput = 0;
+        while (fgets(line, sizeof(line), multiViewConfig))
+        {
+            if (*line == '#' || (strcmp(line, "\r\n") == 0))
+                continue;
+            int index = (int)strcspn(line, "\r\n");
+            line[index] = '\0';
+            argLine = line;
+            while (isspace((unsigned char)*argLine)) argLine++;
+            char* start = strchr(argLine, '-');
+            int argCount = 0;
+            char** args = (char**)malloc(256 * sizeof(char*));
+            //Adding a dummy string to avoid file parsing error
+            args[argCount++] = (char*)"x265";
+            char* token = strtok(start, " ");
+            while (token)
+            {
+                args[argCount++] = token;
+                token = strtok(NULL, " ");
+                while (token && strchr(token, '"'))
+                {
+                    token = strchr(token, '"');
+                    token = strtok(token, "\"");
+                }
+            }
+            args[argCount] = NULL;
+            bool bError = false;
+            bool bInvalid = false;
+            for (optind = 0;;)
+            {
+                int long_options_index = -1;
+                int c = getopt_long(argCount, args, short_options, long_options, &long_options_index);
+                if (c == -1)
+                    break;
+                if (long_options_index < 0 && c > 0)
+                {
+                    for (size_t i = 0; i < sizeof(long_options) / sizeof(long_options[0]); i++)
+                    {
+                        if (long_options[i].val == c)
+                        {
+                            long_options_index = (int)i;
+                            break;
+                        }
+                    }
+                    if (long_options_index < 0)
+                    {
+                        /* getopt_long might have already printed an error message */
+                        if (c != 63)
+                            x265_log(NULL, X265_LOG_WARNING, "internal error: short option '%c' has no long option\n", c);
+                        bInvalid = true;
+                        break;
+                    }
+                }
+                if (long_options_index < 0)
+                {
+                    x265_log(NULL, X265_LOG_WARNING, "short option '%c' unrecognized\n", c);
+                    bInvalid = true;
+                    break;
+                }
+                char nameBuf[64];
+                const char* name = long_options[long_options_index].name;
+                if (!name)
+                    bError = true;
+                else
+                {
+                    // skip -- prefix if provided
+                    if (name[0] == '-' && name[1] == '-')
+                        name += 2;
+                    // s/_/-/g
+                    if (strlen(name) + 1 < sizeof(nameBuf) && strchr(name, '_'))
+                    {
+                        char* ch;
+                        strcpy(nameBuf, name);
+                        while ((ch = strchr(nameBuf, '_')) != 0)
+                            *ch = '-';
+                        name = nameBuf;
+                    }
+                    if (!optarg)
+                        optarg = "true";
+                    else if (optarg[0] == '=')
+                        optarg++;
+#define OPT(STR) else if (!strcmp(name, STR))
+                    if (0);
+                    OPT("num-views") param->numViews = x265_atoi(optarg, bError);
+                    OPT("format") param->format = x265_atoi(optarg, bError);
+                    if (param->numViews > 1)
+                    {
+                        if (0);
+                        OPT("input")
+                        {
+                            strcpy(fn[numInput++], optarg);
+                        }
+
+                    }
+#undef OPT
+                }
+                if (bError)
+                {
+                    const char* optname = long_options_index > 0 ? long_options[long_options_index].name : args[optind - 2];
+                    x265_log(NULL, X265_LOG_ERROR, "invalid argument: %s = %s\n", optname, optarg);
+                    bInvalid = true;
+                    break;
+                }
+            }
+            if (optind < argCount)
+            {
+                x265_log(param, X265_LOG_WARNING, "extra unused command arguments given <%s>\n", args[optind]);
+                bInvalid = true;
+            }
+            if (bInvalid)
+            {
+                if (api)
+                    api->param_free(param);
+                exit(1);
+            }
+            linenum++;
+        }
+        if (numInput != (param->format ? 1 : param->numViews))
+        {
+            x265_log(NULL, X265_LOG_WARNING, "Number of Input files does not match with the given format <%d>\n", param->format);
+            if (api)
+                api->param_free(param);
+            exit(1);
+        }
+        return 1;
+    }
+
+#endif
 
 #ifdef __cplusplus
 }

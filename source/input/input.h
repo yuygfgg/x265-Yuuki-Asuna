@@ -70,7 +70,7 @@ public:
 
     InputFile()           {}
 
-    static InputFile* open(InputFileInfo& info, bool bForceY4m);
+    static InputFile* open(InputFileInfo& info, bool bForceY4m, bool alpha, int format);
 
     virtual void startReader() = 0;
 
