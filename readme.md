@@ -6,7 +6,7 @@
 
 |  Branch             |[lol-Yuuki](https://github.com/Mr-Z-2697/x265-Yuuki-Asuna/tree/lol-Yuuki)       |
 |---------------------|----------------------------------------------------------------------------------------|
-|  Base branch        | [git master](https://github.com/Mr-Z-2697/x265-Yuuki-Asuna/tree/bitbucket-git) (irregularly manually pull)      |
+|  Base branch        | [git master](https://github.com/Mr-Z-2697/x265-Yuuki-Asuna/tree/bitbucket-git) (irregularly manually pulled)      |
 |                     | ![](Yuuki.jpg)                                                                         |
 
 To report a bug due to patches, create a new issue here. To report a x265 bug, please visit their repository or mailing list.
