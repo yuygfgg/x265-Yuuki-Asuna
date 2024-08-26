@@ -69,6 +69,24 @@
     ret PFX(name ## _64x16_ ## cpu)(__VA_ARGS__); \
     ret PFX(name ## _16x64_ ## cpu)(__VA_ARGS__)
 
+#define FUNCDEF_PU_MULT_16(ret, name, cpu, ...) \
+    ret PFX(name ## _16x16_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _32x32_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _64x64_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _16x8_  ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _16x32_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _32x16_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _64x32_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _32x64_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _16x12_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _16x4_  ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _32x24_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _32x8_  ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _64x48_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _48x64_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _64x16_ ## cpu)(__VA_ARGS__); \
+    ret PFX(name ## _16x64_ ## cpu)(__VA_ARGS__)
+
 #define FUNCDEF_CHROMA_PU(ret, name, cpu, ...) \
     FUNCDEF_PU(ret, name, cpu, __VA_ARGS__); \
     ret PFX(name ## _4x2_ ## cpu)(__VA_ARGS__); \
@@ -154,6 +172,10 @@ DECLS(neon);
 DECLS(sve);
 DECLS(sve2);
 
+FUNCDEF_PU_MULT_16(int, pixel_sad, neon_dotprod, const pixel*, intptr_t, const pixel*, intptr_t);
+FUNCDEF_PU_MULT_16(void, sad_x3, neon_dotprod, const pixel*, const pixel*, const pixel*, const pixel*, intptr_t, int32_t*);
+FUNCDEF_PU_MULT_16(void, sad_x4, neon_dotprod, const pixel*, const pixel*, const pixel*, const pixel*, const pixel*, intptr_t, int32_t*);
+FUNCDEF_PU(sse_t, pixel_sse_pp, neon_dotprod, const pixel*, intptr_t, const pixel*, intptr_t);
 
 void PFX(pixel_planecopy_cp_neon(const uint8_t* src, intptr_t srcStride, pixel* dst, intptr_t dstStride, int width, int height, int shift));
 
@@ -243,8 +265,6 @@ int PFX(pixel_satd_8x12_sve(const pixel* pix1, intptr_t stride_pix1, const pixel
 int PFX(pixel_satd_32x16_sve(const pixel* pix1, intptr_t stride_pix1, const pixel* pix2, intptr_t stride_pix2));
 int PFX(pixel_satd_32x32_sve(const pixel* pix1, intptr_t stride_pix1, const pixel* pix2, intptr_t stride_pix2));
 int PFX(pixel_satd_64x48_sve(const pixel* pix1, intptr_t stride_pix1, const pixel* pix2, intptr_t stride_pix2));
-
-uint32_t PFX(quant_sve)(const int16_t* coef, const int32_t* quantCoeff, int32_t* deltaU, int16_t* qCoef, int qBits, int add, int numCoeff);
 
 void PFX(dequant_scaling_sve2(const int16_t* quantCoef, const int32_t* deQuantCoef, int16_t* coef, int num, int per, int shift));
 void PFX(dequant_normal_sve2(const int16_t* quantCoef, int16_t* coef, int num, int scale, int shift));
