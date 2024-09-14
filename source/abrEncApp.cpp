@@ -252,7 +252,20 @@ namespace X265_NS {
                 return -1;
             }
         }
+
+        /* This allows muxers to modify bitstream format */
         m_cliopt.output->setParam(m_param);
+
+        if (m_cliopt.zoneFile)
+        {
+            if (!m_cliopt.parseZoneFile())
+            {
+                x265_log(NULL, X265_LOG_ERROR, "Unable to parse zonefile in %s\n");
+                fclose(m_cliopt.zoneFile);
+                m_cliopt.zoneFile = NULL;
+            }
+        }
+
         /* note: we could try to acquire a different libx265 API here based on
         * the profile found during option parsing, but it must be done before
         * opening an encoder */
@@ -578,21 +591,10 @@ ret:
             x265_vmaf_data* vmafdata = m_cliopt.vmafData;
 #endif
             const x265_api* api = m_cliopt.api;
-            /* This allows muxers to modify bitstream format */
             ReconPlay* reconPlay = NULL;
             if (m_cliopt.reconPlayCmd)
                 reconPlay = new ReconPlay(m_cliopt.reconPlayCmd, *m_param);
             char* profileName = m_cliopt.encName ? m_cliopt.encName : (char *)"x265";
-
-            if (m_cliopt.zoneFile)
-            {
-                if (!m_cliopt.parseZoneFile())
-                {
-                    x265_log(NULL, X265_LOG_ERROR, "Unable to parse zonefile in %s\n", profileName);
-                    fclose(m_cliopt.zoneFile);
-                    m_cliopt.zoneFile = NULL;
-                }
-            }
 
             if (signal(SIGINT, sigint_handler) == SIG_ERR)
                 x265_log(m_param, X265_LOG_ERROR, "Unable to register CTRL+C handler: %s in %s\n",

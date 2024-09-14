@@ -2841,8 +2841,8 @@ void Encoder::printSummary()
                 (float)100.0 * (m_rateControl->m_numEntries - m_rpsInSpsCount) / m_rateControl->m_numEntries);
         }
 
-    if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
-        x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
+        if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
+            x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
 
         if (m_analyzeAll[layer].m_numPics)
         {
@@ -2855,8 +2855,8 @@ void Encoder::printSummary()
             double seconds = (int)elapsedEncodeTime % 60 + (elapsedEncodeTime - (int)elapsedEncodeTime);
 
             p += sprintf(buffer + p, "\nencoded %d frames in %d:%02d:%05.2f (%.2f fps), %.2f kb/s, Avg QP:%2.2lf", m_analyzeAll[layer].m_numPics,
-                     hours, minutes, seconds,
-                     m_analyzeAll[layer].m_numPics / elapsedEncodeTime, bitrate, m_analyzeAll[layer].m_totalQp / (double)m_analyzeAll[layer].m_numPics);
+                         hours, minutes, seconds,
+                         m_analyzeAll[layer].m_numPics / elapsedEncodeTime, bitrate, m_analyzeAll[layer].m_totalQp / (double)m_analyzeAll[layer].m_numPics);
 
             if (m_param->bEnablePsnr)
             {

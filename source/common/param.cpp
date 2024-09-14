@@ -1340,6 +1340,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("qblur") p->rc.qblur = atof(value);
     OPT("aq-mode") p->rc.aqMode = atoi(value);
     OPT("aq-strength") p->rc.aqStrength = atof(value);
+    OPT("aq-bias-strength") p->rc.aqBiasStrength = atof(value);
     OPT("vbv-maxrate") p->rc.vbvMaxBitrate = atoi(value);
     OPT("vbv-bufsize") p->rc.vbvBufferSize = atoi(value);
     OPT("vbv-init")    p->rc.vbvBufferInit = atof(value);
@@ -2546,6 +2547,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
     s += sprintf(s, " uhd-bd=%d", p->uhdBluray);
     BOOL(p->bAllowNonConformance, "allow-non-conformance");
     BOOL(p->bRepeatHeaders, "repeat-headers");
+    BOOL(p->bAnnexB, "annexb");
     BOOL(p->bEnableAccessUnitDelimiters, "aud");
     BOOL(p->bEnableEndOfBitstream, "eob");
     BOOL(p->bEnableEndOfSequence, "eos");

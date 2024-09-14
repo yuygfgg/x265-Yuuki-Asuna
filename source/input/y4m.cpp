@@ -41,7 +41,6 @@ using namespace X265_NS;
 using namespace std;
 static const char header[] = {'F','R','A','M','E'};
 static const char magic_xlength[] = {'L','E','N','G','T','H','='};
-
 Y4MInput::Y4MInput(InputFileInfo& info, bool alpha, int format)
 {
     for (int i = 0; i < QUEUE_SIZE; i++)

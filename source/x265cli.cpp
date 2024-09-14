@@ -896,8 +896,8 @@ namespace X265_NS {
                     if (!this->zoneFile)
                         x265_log_file(param, X265_LOG_ERROR, "%s zone file not found or error in opening zone file\n", optarg);
                 }
-                OPT("vf") this->vf = optarg;
                 OPT("no-zonefile-rc-init") this->param->bNoResetZoneConfig = true;
+                OPT("vf") this->vf = optarg;
                 OPT("fullhelp")
                 {
                     param->logLevel = X265_LOG_FULL;
@@ -1014,6 +1014,7 @@ namespace X265_NS {
         }
 
             //TODO:Validate info params of both the views to equal values
+
         if (this->vf)
         {
             bool bFail = Filter::parseFilterString(this->vf, &this->filters);

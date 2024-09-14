@@ -55,9 +55,9 @@ protected:
 
     int colorSpace;
 
-    int frameCount;
-
     bool alphaAvailable;
+
+    int frameCount;
 
     bool threadActive;
 
