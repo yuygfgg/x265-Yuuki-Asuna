@@ -579,7 +579,7 @@ namespace X265_NS {
             estsz_prec = estsz < 1024000 ? 2 : estsz < 10240000 ? 1 : 0;
             estsz_num  = estsz < 1024 ? estsz : estsz / 1024;
             estsz_unit = estsz < 1024 ? "K" : "M";
-            sprintf(buf, "x265 [%.1f%%] %d/%d frames, %.*f fps, %.*f kb/s, %d:%02d:%02d, %.*f %sB, -%d:%02d:%02d, ~%.*f %sB",
+            snprintf(buf, sizeof(buf), "x265 [%.1f%%] %d/%d frames, %.*f fps, %.*f kb/s, %d:%02d:%02d, %.*f %sB, -%d:%02d:%02d, ~%.*f %sB",
                     percentage, frameNum, (param->chunkEnd ? param->chunkEnd : param->totalFrames), fps_prec, fps, bitrate_prec, bitrate,
                     ela_hh, ela_mm, ela_ss,
                     file_prec, file_num, file_unit,
@@ -587,7 +587,7 @@ namespace X265_NS {
                     estsz_prec, estsz_num, estsz_unit);
         }
         else
-            sprintf(buf, "x265 %d frames: %.*f fps, %.*f kb/s, %.*f %sB",
+            snprintf(buf, sizeof(buf), "x265 %d frames: %.*f fps, %.*f kb/s, %.*f %sB",
                     frameNum, fps_prec, fps, bitrate_prec, bitrate,
                     file_prec, file_num, file_unit);
 
@@ -1109,18 +1109,18 @@ namespace X265_NS {
         if (param->logLevel >= X265_LOG_INFO || param->logfLevel >= X265_LOG_INFO)
         {
             char buf[128];
-            int p = sprintf(buf, "%dx%d fps %d/%d %sp%d", param->sourceWidth, param->sourceHeight,
+            int p = snprintf(buf, sizeof(buf), "%dx%d fps %d/%d %sp%d", param->sourceWidth, param->sourceHeight,
                 param->fpsNum, param->fpsDenom, x265_source_csp_names[param->internalCsp], info[0].depth);
 
             int width, height;
             getParamAspectRatio(param, width, height);
             if (width && height)
-                p += sprintf(buf + p, " sar %d:%d", width, height);
+                p += snprintf(buf + p, sizeof(buf) - p, " sar %d:%d", width, height);
 
             if (framesToBeEncoded <= 0 || info[0].frameCount <= 0)
                 strcpy(buf + p, " unknown frame count");
             else
-                sprintf(buf + p, " frames %u - %d of %d", this->seek, this->seek + this->framesToBeEncoded - 1, info[0].frameCount);
+                snprintf(buf + p, sizeof(buf) - p, " frames %u - %d of %d", this->seek, this->seek + this->framesToBeEncoded - 1, info[0].frameCount);
 
             for (int view = 0; view < param->numViews - !!param->format; view++)
                 general_log(param, input[view]->getName(), X265_LOG_INFO, "%s\n", buf);
@@ -1146,7 +1146,7 @@ namespace X265_NS {
                 for (int view = 0; view < param->numLayers; view++)
                 {
                     char* buf = new char[strlen(temp) + 7];
-                    sprintf(buf, "%s-%d.yuv", token, view);
+                    snprintf(buf, strlen(temp) + 7, "%s-%d.yuv", token, view);
                     reconfn[view] = buf;
                 }
             }
@@ -1169,7 +1169,7 @@ namespace X265_NS {
             }
         }
 #if ENABLE_LIBVMAF
-        if (!reconfn)
+        if (!reconfn[0])
         {
             x265_log(param, X265_LOG_ERROR, "recon file must be specified to get VMAF score, try --help for help\n");
             return true;
