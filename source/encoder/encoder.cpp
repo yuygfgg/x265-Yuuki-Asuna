@@ -2871,7 +2871,7 @@ void Encoder::printSummary()
             int minutes = (int)(elapsedEncodeTime / 60) % 60;
             double seconds = (int)elapsedEncodeTime % 60 + (elapsedEncodeTime - (int)elapsedEncodeTime);
 
-            p += sprintf(buffer + p, sizeof(buffer) - p, "\nencoded %d frames in %d:%02d:%05.2f (%.2f fps), %.2f kb/s, Avg QP:%2.2lf", m_analyzeAll[layer].m_numPics,
+            p += snprintf(buffer + p, sizeof(buffer) - p, "\nencoded %d frames in %d:%02d:%05.2f (%.2f fps), %.2f kb/s, Avg QP:%2.2lf", m_analyzeAll[layer].m_numPics,
                          hours, minutes, seconds,
                          m_analyzeAll[layer].m_numPics / elapsedEncodeTime, bitrate, m_analyzeAll[layer].m_totalQp / (double)m_analyzeAll[layer].m_numPics);
 
