@@ -475,7 +475,8 @@ namespace X265_NS {
         H0("\nSEI Message Options\n");
         H0("   --film-grain <filename>       File containing Film Grain Characteristics to be written as a SEI Message\n");
         H0("   --aom-film-grain <filename>   File containing Aom Film Grain Characteristics to be written as a SEI Message\n");
-
+        H0("   --[no-]frame-rc              Enable configuring Rate Control parameters(QP, CRF or Bitrate) at frame level.Default 0\n"
+           "                                Enable this option only when planning to invoke the API function x265_encoder_reconfig to configure Rate Control parameters\n");
 #undef OPT
 #undef H0
 #undef H1
@@ -515,6 +516,10 @@ namespace X265_NS {
         if (dolbyVisionRpu)
             fclose(dolbyVisionRpu);
         dolbyVisionRpu = NULL;
+#if ENABLE_MULTIVIEW
+        if (multiViewConfig)
+            fclose(multiViewConfig);
+#endif
         if (output)
             output->release();
         output = NULL;
@@ -665,7 +670,6 @@ namespace X265_NS {
             showHelp(globalParam);
         }
 
-        globalParam->rc.zones[zonefileCount].zoneParam = api->param_alloc();
         if (!globalParam->rc.zones[zonefileCount].zoneParam)
         {
             x265_log(NULL, X265_LOG_ERROR, "param alloc failed\n");
@@ -1259,6 +1263,7 @@ namespace X265_NS {
         }
 
         rewind(zoneFile);
+        char **args = (char**)alloca(256 * sizeof(char *));
         param->rc.zones = X265_MALLOC(x265_zone, param->rc.zonefileCount);
         for (int i = 0; i < param->rc.zonefileCount; i++)
         {
@@ -1276,7 +1281,6 @@ namespace X265_NS {
                 start++;
                 param->rc.zones[i].startFrame = atoi(argLine);
                 int argCount = 0;
-                char **args = (char**)malloc(256 * sizeof(char *));
                 // Adding a dummy string to avoid file parsing error
                 args[argCount++] = (char *)"x265";
                 char* token = strtok(start, " ");
@@ -1482,6 +1486,7 @@ namespace X265_NS {
         rewind(multiViewConfig);
         int linenum = 0;
         int numInput = 0;
+        char** args = (char**)malloc(256 * sizeof(char*));
         while (fgets(line, sizeof(line), multiViewConfig))
         {
             if (*line == '#' || (strcmp(line, "\r\n") == 0))
@@ -1493,7 +1498,6 @@ namespace X265_NS {
             char* start = strchr(argLine, '-');
             int argCount = 0;
             char flag[] = "true";
-            char** args = (char**)malloc(256 * sizeof(char*));
             //Adding a dummy string to avoid file parsing error
             args[argCount++] = (char*)"x265";
             char* token = strtok(start, " ");
@@ -1595,6 +1599,7 @@ namespace X265_NS {
             {
                 if (api)
                     api->param_free(param);
+                free(args);
                 exit(1);
             }
             linenum++;
@@ -1604,6 +1609,7 @@ namespace X265_NS {
             x265_log(NULL, X265_LOG_WARNING, "Number of Input files does not match with the given format <%d>\n", param->format);
             if (api)
                 api->param_free(param);
+            free(args);
             exit(1);
         }
         return 1;

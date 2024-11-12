@@ -405,6 +405,8 @@ static const struct option long_options[] =
     { "scenecut-qp-config", required_argument, NULL, 0 },
     { "film-grain", required_argument, NULL, 0 },
     { "aom-film-grain", required_argument, NULL, 0 },
+    { "frame-rc",no_argument, NULL, 0 },
+    { "no-frame-rc",no_argument, NULL, 0 },
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 },
@@ -447,8 +449,8 @@ static const struct option long_options[] =
         /* ABR ladder settings */
         bool isAbrLadderConfig;
         bool enableScaler;
-        char*    encName;
-        char*    reuseName;
+        char     encName[X265_MAX_STRING_SIZE];
+        char     reuseName[X265_MAX_STRING_SIZE];
         uint32_t encId;
         int      refId;
         uint32_t loadLevel;
@@ -487,8 +489,8 @@ static const struct option long_options[] =
             vf = NULL;
             isAbrLadderConfig = false;
             enableScaler = false;
-            encName = NULL;
-            reuseName = NULL;
+            encName[0] = 0;
+            reuseName[0] = 0;
             encId = 0;
             refId = -1;
             loadLevel = 0;
