@@ -26,6 +26,8 @@
 #include "threading.h"
 #include "x265.h"
 
+volatile int numErrorsDuringEncoding = 0;
+
 #if _WIN32
 #include <sys/types.h>
 #include <sys/timeb.h>

@@ -469,4 +469,6 @@ void     x265_report_simd(x265_param* param);
 
 #include "constants.h"
 
+extern volatile int numErrorsDuringEncoding;
+
 #endif // ifndef X265_COMMON_H
