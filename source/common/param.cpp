@@ -23,12 +23,9 @@
  *****************************************************************************/
 
 #include "common.h"
-#include "slice.h"
-#include "threading.h"
 #include "param.h"
 #include "cpu.h"
 #include "x265.h"
-#include "svt.h"
 #include <string>
 
 #if _MSC_VER

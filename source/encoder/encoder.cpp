@@ -32,7 +32,6 @@
 #include "framedata.h"
 #include "picyuv.h"
 
-#include "bitcost.h"
 #include "encoder.h"
 #include "slicetype.h"
 #include "frameencoder.h"

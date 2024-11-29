@@ -25,6 +25,7 @@
 #ifndef X265_PARAM_H
 #define X265_PARAM_H
 
+#include "x265.h"
 namespace X265_NS {
 
 int   x265_check_params(x265_param *param);

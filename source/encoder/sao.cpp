@@ -444,19 +444,19 @@ void SAO::applyPixelOffsets(int addr, int typeIdx, int plane)
 
         if (ctuWidth & 15)
         {
-             for (int y = startY; y < endY; y++, rec += stride)
-             {
-                 upBufft[startX] = x265_signOf(rec[stride + startX] - tmpL[y]);
-                 for (int x = startX; x < endX; x++)
-                 {
-                     int8_t signDown = x265_signOf(rec[x] - rec[x + stride + 1]);
-                     int edgeType = signDown + upBuff1[x] + 2;
-                     upBufft[x + 1] = -signDown;
-                     rec[x] = m_clipTable[rec[x] + offsetEo[edgeType]];
-                 }
+            for (int y = startY; y < endY; y++, rec += stride)
+            {
+                upBufft[startX] = x265_signOf(rec[stride + startX] - tmpL[y]);
+                for (int x = startX; x < endX; x++)
+                {
+                    int8_t signDown = x265_signOf(rec[x] - rec[x + stride + 1]);
+                    int edgeType = signDown + upBuff1[x] + 2;
+                    upBufft[x + 1] = -signDown;
+                    rec[x] = m_clipTable[rec[x] + offsetEo[edgeType]];
+                }
 
-                 std::swap(upBuff1, upBufft);
-             }
+                std::swap(upBuff1, upBufft);
+            }
         }
         else
         {
@@ -787,7 +787,7 @@ void SAO::calcSaoStatsCTU(int addr, int plane)
         if (plane)
             primitives.chroma[m_chromaFormat].cu[m_param->maxLog2CUSize - 2].sub_ps(diff, MAX_CU_SIZE, fenc0, rec0, stride, stride);
         else
-           primitives.cu[m_param->maxLog2CUSize - 2].sub_ps(diff, MAX_CU_SIZE, fenc0, rec0, stride, stride);
+            primitives.cu[m_param->maxLog2CUSize - 2].sub_ps(diff, MAX_CU_SIZE, fenc0, rec0, stride, stride);
     }
     else
     {
