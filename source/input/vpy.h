@@ -27,13 +27,15 @@
 #include <unordered_map>
 #include <atomic>
 
-#include <vapoursynth/VSScript.h>
+#include </vapoursynth/VSScript.h>
 #include <vapoursynth/VSHelper.h>
 
 #include "input.h"
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+
+#define LIBVAPOURSYNTH_SCRIPT /usr/local/lib/libvapoursynth-script.dylib // I'm too lazy to use cmake.
 
 #if _WIN32
     #include <windows.h>

@@ -24,6 +24,8 @@
 #include "common.h"
 #include "x265.h"
 
+volatile int __attribute__((weak)) numErrorsDuringEncoding = 0;
+
 #if _WIN32
 #include <sys/types.h>
 #include <sys/timeb.h>
@@ -102,7 +104,7 @@ int x265_exp2fix8(double x)
 
 void general_log(const x265_param* param, const char* caller, int level, const char* fmt, ...)
 {
-    // if (level == X265_LOG_ERROR) numErrorsDuringEncoding++;
+    if (level == X265_LOG_ERROR) numErrorsDuringEncoding++;
     if (param && level > param->logLevel && level > param->logfLevel)
         return;
     const int bufferSize = 4096;
