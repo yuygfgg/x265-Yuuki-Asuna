@@ -27,7 +27,7 @@
 #include <unordered_map>
 #include <atomic>
 
-#include </vapoursynth/VSScript.h>
+#include <vapoursynth/VSScript.h>
 #include <vapoursynth/VSHelper.h>
 
 #include "input.h"
