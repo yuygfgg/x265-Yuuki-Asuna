@@ -1888,8 +1888,8 @@ int x265_check_params(x265_param* param)
 {
 #define CHECK(expr, msg) check_failed |= _confirm(param, expr, msg)
     int check_failed = 0; /* abort if there is a fatal configuration problem */
-    // TODO: add more Levels? 6.3-7.2, new in H.265 V9 (202309) and above
-    CHECK((param->sourceWidth * param->sourceHeight) > (8192 * 4352) && !param->bAllowNonConformance, "Input video resolution exceeds the maximum supported luma samples 35,651,584 (8192x4352) of Level 6.2, to override this limit, use --allow-non-conformance.");
+    CHECK((uint64_t)param->sourceWidth * param->sourceHeight > 142606336,
+          "Input video resolution exceeds the maximum supported luma samples 142,606,336 (16384x8704) of Level 7.2.");
     CHECK(param->uhdBluray == 1 && (X265_DEPTH != 10 || param->internalCsp != 1 || param->interlaceMode != 0),
         "uhd-bd: bit depth, chroma subsample, source picture type must be 10, 4:2:0, progressive");
     CHECK(param->maxCUSize != 64 && param->maxCUSize != 32 && param->maxCUSize != 16,
