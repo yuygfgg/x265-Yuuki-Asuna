@@ -32,7 +32,10 @@
 *.app
 
 # Build directory
-build/
+build/*
+!build/clang-pgo/
+build/clang-pgo/*
+!build/clang-pgo/multilib.sh
 
 .cache/*
 .DS_Store
