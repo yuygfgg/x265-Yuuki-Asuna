@@ -36,6 +36,6 @@ EOF
 else
 
 # Mac/BSD
-ar rcs libx265.a libx265_main.a libx265_main10.a libx265_main12.a
+(mkdir -p temp_lib && cd temp_lib && for lib in ./../libx265_main.a ./../libx265_main10.a ./../libx265_main12.a; do ar x -- "$lib"; done && ar rcs ./../libx265.a ./*.o && cd .. && rm -rf temp_lib)
 
 fi
