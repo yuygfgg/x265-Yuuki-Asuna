@@ -176,6 +176,7 @@ else
 # Mac/BSD libtool
 libtool -static -o libx265.a libx265_main.a libx265_main10.a libx265_main12.a 2>/dev/null
 
+fi
 
 echo "===== Build Complete ====="
 if $ENABLE_10BIT_PGO; then
