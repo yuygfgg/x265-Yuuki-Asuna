@@ -35,7 +35,7 @@ EOF
 
 else
 
-# Mac/BSD libtool
-libtool -static -o libx265.a libx265_main.a libx265_main10.a libx265_main12.a 2>/dev/null
+# Mac/BSD
+ar rcs libx265.a libx265_main.a libx265_main10.a libx265_main12.a
 
 fi
