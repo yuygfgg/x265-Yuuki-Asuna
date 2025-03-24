@@ -1025,7 +1025,7 @@ if(MSVC)
 endif(MSVC)
 
 # CLI-specific option here
-option(ENABLE_LSMASH "Enable L-SMASH muxer" OFF)
+option(ENABLE_LSMASH "Enable L-SMASH muxer" ON)
 if(ENABLE_LSMASH)
     add_definitions(-DENABLE_LSMASH)
     list(APPEND PLATFORM_LIBS lsmash)
@@ -1060,7 +1060,7 @@ if(ENABLE_STATIC_LAVF)
                                 ${PC_LIBSWSCALE_STATIC_LDFLAGS})
 endif()
 
-option(ENABLE_ZIMG "Enable ZImg scaling libary" OFF)
+option(ENABLE_ZIMG "Enable ZImg scaling libary" ON)
 if(ENABLE_ZIMG)
     add_definitions(-DENABLE_ZIMG)
     list(APPEND PLATFORM_LIBS zimg)
