@@ -2,7 +2,7 @@
 
 # ======= PGO Configuration =======
 ENABLE_10BIT_PGO=true
-USE_EXISTING_PROFILE=false  # Set to true to skip profile collection and use existing data
+USE_EXISTING_PROFILE=true  # Set to true to skip profile collection and use existing data
 
 # Direct Clang PGO compiler flags
 CLANG_PROFILE_GEN="-fprofile-instr-generate"
@@ -20,13 +20,13 @@ TOP_DIR="$(pwd)"
 
 # ======= 12bit Build =======
 echo "Building 12bit library..."
-cd 12bit
+cd 12bit || exit
 cmake -G "Unix Makefiles" ../../../source -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON
-make ${MAKEFLAGS}
+make "${MAKEFLAGS}"
 cp libx265.a ../8bit/libx265_main12.a
 
 # ======= 10bit Build with PGO =======
-cd ../10bit
+cd ../10bit || exit
 echo "Building 10bit library..."
 
 if $ENABLE_10BIT_PGO; then
@@ -58,7 +58,7 @@ if $ENABLE_10BIT_PGO; then
               -DCMAKE_EXE_LINKER_FLAGS="${CLANG_PROFILE_GEN}" \
               -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_GEN}"
         
-        make ${MAKEFLAGS}
+        make "${MAKEFLAGS}"
         
         echo "=== Step 2: Collecting 10bit encoding performance data ==="
         
@@ -88,7 +88,7 @@ if $ENABLE_10BIT_PGO; then
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
             export LLVM_PROFILE_FILE="${TOP_DIR}/pgo_profile/x265-${TIMESTAMP}-test${TEST_COUNT}.profraw"
             
-            echo "Profile data will be saved to: $(basename ${LLVM_PROFILE_FILE})"
+            echo "Profile data will be saved to: $(basename "${LLVM_PROFILE_FILE}")"
             
             echo "Please enter an encoding command for performance analysis:"
             echo "Tip: Try different presets, video content types, and encoding parameters"
@@ -98,7 +98,7 @@ if $ENABLE_10BIT_PGO; then
             read -p "> " PGO_ENCODE_CMD
             
             echo "Executing: $PGO_ENCODE_CMD"
-            eval $PGO_ENCODE_CMD
+            eval "$PGO_ENCODE_CMD"
             
             # Verify profile data was created
             if [ -f "$LLVM_PROFILE_FILE" ]; then
@@ -115,7 +115,7 @@ if $ENABLE_10BIT_PGO; then
         done
         
         echo "=== Step 3: Processing performance data ==="
-        cd "${TOP_DIR}/pgo_profile"
+        cd "${TOP_DIR}/pgo_profile" || exit
         
         # Check if profile data files exist
         PROFRAW_COUNT=$(ls -1 x265-*.profraw 2>/dev/null | wc -l)
@@ -151,7 +151,7 @@ if $ENABLE_10BIT_PGO; then
         
         echo ""
         echo "=== Step 5: Cleaning temporary build ==="
-        cd "${TOP_DIR}/10bit"
+        cd "${TOP_DIR}/10bit" || exit
         make clean
     fi
     
@@ -165,7 +165,7 @@ if $ENABLE_10BIT_PGO; then
           -DCMAKE_EXE_LINKER_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}" \
           -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}"
     
-    make ${MAKEFLAGS}
+    make "${MAKEFLAGS}"
     
     echo "Note: If you see '-Wprofile-instr-unprofiled' warnings, it means some source files didn't collect profile data."
     echo "This won't prevent the build, but will reduce PGO optimization effectiveness for those files."
@@ -173,22 +173,22 @@ else
     # Standard 10bit build (no PGO)
     cmake -G "Unix Makefiles" ../../../source -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF \
           -DENABLE_SHARED=OFF -DENABLE_CLI=OFF
-    make ${MAKEFLAGS}
+    make "${MAKEFLAGS}"
 fi
 
 cp libx265.a ../8bit/libx265_main10.a
 
 # ======= 8bit Build =======
 echo "Building 8bit library and combining final library..."
-cd "${TOP_DIR}/8bit"
+cd "${TOP_DIR}/8bit" || exit
 cmake -G "Unix Makefiles" ../../../source -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=ON -DLINKED_12BIT=ON
-make ${MAKEFLAGS}
+make "${MAKEFLAGS}"
 
 # Rename 8bit library, then use GNU ar to combine all three libraries into libx265.a
 mv libx265.a libx265_main.a
 
 
-uname=`uname`
+uname=$(uname)
 if [ "$uname" = "Linux" ]
 then
 

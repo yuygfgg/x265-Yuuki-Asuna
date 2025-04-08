@@ -41,3 +41,4 @@ build/clang-pgo/*
 .DS_Store
 */.DS_Store
 .vscode/*
+checks.json
