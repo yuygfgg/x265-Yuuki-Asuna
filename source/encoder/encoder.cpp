@@ -3783,8 +3783,10 @@ void Encoder::configureDolbyVisionParams(x265_param* p)
     if (dovi[doviProfile].doviProfileId == 81)
         p->bEmitHDR10SEI = p->bEmitCLL = 1;
 
-    if (dovi[doviProfile].doviProfileId == 50)
+    if (dovi[doviProfile].doviProfileId == 50 && !p->bUserSetCrQpOffset)
+    {
         p->crQpOffset = 3;
+    }
 }
 
 void Encoder::configureVideoSignalTypePreset(x265_param* p)

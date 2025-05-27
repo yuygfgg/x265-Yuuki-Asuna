@@ -449,6 +449,8 @@ void x265_param_default(x265_param* param)
     param->bEnableSCC = 0;
 
     param->bConfigRCFrame = 0;
+
+    param->bUserSetCrQpOffset = false;
 }
 
 int x265_param_default_preset(x265_param* param, const char* preset, const char* tune)
@@ -757,6 +759,7 @@ int x265_param_default_preset(x265_param* param, const char* preset, const char*
             param->rc.qgSize = 8;
             param->cbQpOffset = -2; //better chroma quality to compensate 420 subsampling
             param->crQpOffset = -2; //better chroma quality to compensate 420 subsampling
+            param->bUserSetCrQpOffset = true;
             param->rc.pbFactor = 1.2; //down from 1.3
             param->bEnableWeightedBiPred = 1;
             if (tune[0] == 'l') {
@@ -1378,7 +1381,12 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("weightp") p->bEnableWeightedPred = atobool(value);
     OPT("weightb") p->bEnableWeightedBiPred = atobool(value);
     OPT("cbqpoffs") p->cbQpOffset = atoi(value);
-    OPT("crqpoffs") p->crQpOffset = atoi(value);
+    OPT("crqpoffs") 
+    {
+        p->crQpOffset = atoi(value);
+        if (!bError)
+            p->bUserSetCrQpOffset = true;
+    }
     OPT("rd") p->rdLevel = atoi(value);
     OPT2("rdoq", "rdoq-level")
     {
@@ -3149,6 +3157,7 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->bLossless = src->bLossless;
     dst->cbQpOffset = src->cbQpOffset;
     dst->crQpOffset = src->crQpOffset;
+    dst->bUserSetCrQpOffset = src->bUserSetCrQpOffset;
     dst->preferredTransferCharacteristics = src->preferredTransferCharacteristics;
     dst->pictureStructure = src->pictureStructure;
 

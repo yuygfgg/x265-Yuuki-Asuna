@@ -1687,6 +1687,9 @@ typedef struct x265_param
      * Default is 0, which is recommended */
     int       crQpOffset;
 
+    /* True if crQpOffset was set by user. */
+    int       bUserSetCrQpOffset;
+
 	/* Specifies the preferred transfer characteristics syntax element in the
 	 * alternative transfer characteristics SEI message (see. D.2.38 and D.3.38 of
 	 * JCTVC-W1005 http://phenix.it-sudparis.eu/jct/doc_end_user/documents/23_San%20Diego/wg11/JCTVC-W1005-v4.zip
@@ -1746,7 +1749,7 @@ typedef struct x265_param
          * It scales the quantization step size according to the spatial activity of one
          * coding unit relative to frame average spatial activity. This AQ method utilizes
          * the minimum variance of sub-unit in each coding unit to represent the coding
-         * unit’s spatial complexity. */
+         * unit's spatial complexity. */
         int       hevcAq;
 
         /* Sets the strength of AQ bias towards low detail CTUs. Valid only if
