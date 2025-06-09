@@ -1096,7 +1096,7 @@ if(ENABLE_STATIC_LAVF)
                                 ${PC_LIBSWSCALE_STATIC_LDFLAGS})
 endif()
 
-option(ENABLE_ZIMG "Enable ZImg scaling libary" ON)
+option(ENABLE_ZIMG "Enable ZImg scaling libary" OFF)
 if(ENABLE_ZIMG)
     add_definitions(-DENABLE_ZIMG)
     list(APPEND PLATFORM_LIBS zimg)
