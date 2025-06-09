@@ -35,7 +35,14 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-#define LIBVAPOURSYNTH_SCRIPT /usr/local/lib/libvapoursynth-script.dylib // I'm too lazy to use cmake.
+// LIBVAPOURSYNTH_SCRIPT should be defined by cmake
+#ifndef LIBVAPOURSYNTH_SCRIPT
+    #ifdef __MACH__
+        #define LIBVAPOURSYNTH_SCRIPT "/opt/homebrew/lib/libvapoursynth-script.dylib"
+    #else
+        #define LIBVAPOURSYNTH_SCRIPT "/usr/local/lib/libvapoursynth-script.so"
+    #endif
+#endif
 
 #if _WIN32
     #include <windows.h>
