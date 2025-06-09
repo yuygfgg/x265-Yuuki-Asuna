@@ -2769,6 +2769,19 @@ void Encoder::printSummary()
                 (float)100.0 * m_numChromaWPBiFrames / m_analyzeB[layer].m_numPics);
         }
 
+        int pWithB = 0;
+        for (int i = 0; i <= m_param->bframes; i++)
+            pWithB += m_lookahead->m_histogram[i];
+
+        if (pWithB)
+        {
+            int p = 0;
+            for (int i = 0; i <= m_param->bframes; i++)
+                p += snprintf(buffer + p, sizeof(buffer) - p, "%.1f%% ", 100. * m_lookahead->m_histogram[i] / pWithB);
+
+            x265_log(m_param, X265_LOG_INFO, "consecutive B-frames: %s\n", buffer);
+        }
+
         if (m_param->bLossless)
         {
             float frameSize = (float)(m_param->sourceWidth - m_sps.conformanceWindow.rightOffset) *
@@ -2784,9 +2797,6 @@ void Encoder::printSummary()
                 m_rateControl->m_numEntries - m_rpsInSpsCount,
                 (float)100.0 * (m_rateControl->m_numEntries - m_rpsInSpsCount) / m_rateControl->m_numEntries);
         }
-
-        if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
-            x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
 
         if (m_analyzeAll[layer].m_numPics)
         {
@@ -2964,6 +2974,9 @@ void Encoder::printSummary()
 #undef ELAPSED_SEC
 #undef ELAPSED_MSEC
 #endif
+
+        if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
+            x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
     }
 }
 
