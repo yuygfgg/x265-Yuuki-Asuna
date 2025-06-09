@@ -24,8 +24,6 @@
 #include "common.h"
 #include "x265.h"
 
-volatile int __attribute__((weak)) numErrorsDuringEncoding = 0;
-
 #if _WIN32
 #include <sys/types.h>
 #include <sys/timeb.h>

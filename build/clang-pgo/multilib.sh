@@ -21,7 +21,7 @@ TOP_DIR="$(pwd)"
 # ======= 12bit Build =======
 echo "Building 12bit library..."
 cd 12bit || exit
-cmake -G "Unix Makefiles" ../../../source -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON
+cmake -G "Unix Makefiles" ../../../source -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DMOD_BUILD=Asuna
 make "${MAKEFLAGS}"
 cp libx265.a ../8bit/libx265_main12.a
 
@@ -56,7 +56,8 @@ if $ENABLE_10BIT_PGO; then
               -DCMAKE_C_FLAGS="${CLANG_PROFILE_GEN}" \
               -DCMAKE_CXX_FLAGS="${CLANG_PROFILE_GEN}" \
               -DCMAKE_EXE_LINKER_FLAGS="${CLANG_PROFILE_GEN}" \
-              -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_GEN}"
+              -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_GEN}" \
+              -DMOD_BUILD=Asuna
         
         make "${MAKEFLAGS}"
         
@@ -163,7 +164,8 @@ if $ENABLE_10BIT_PGO; then
           -DCMAKE_C_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}" \
           -DCMAKE_CXX_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}" \
           -DCMAKE_EXE_LINKER_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}" \
-          -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}"
+          -DCMAKE_SHARED_LINKER_FLAGS="${CLANG_PROFILE_USE}${PROFILE_DATA_PATH}" \
+          -DMOD_BUILD=Asuna
     
     make "${MAKEFLAGS}"
     
@@ -172,7 +174,8 @@ if $ENABLE_10BIT_PGO; then
 else
     # Standard 10bit build (no PGO)
     cmake -G "Unix Makefiles" ../../../source -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF \
-          -DENABLE_SHARED=OFF -DENABLE_CLI=OFF
+          -DENABLE_SHARED=OFF -DENABLE_CLI=OFF \
+          -DMOD_BUILD=Asuna
     make "${MAKEFLAGS}"
 fi
 
@@ -181,7 +184,7 @@ cp libx265.a ../8bit/libx265_main10.a
 # ======= 8bit Build =======
 echo "Building 8bit library and combining final library..."
 cd "${TOP_DIR}/8bit" || exit
-cmake -G "Unix Makefiles" ../../../source -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=ON -DLINKED_12BIT=ON
+cmake -G "Unix Makefiles" ../../../source -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DMOD_BUILD=Asuna
 make "${MAKEFLAGS}"
 
 # Rename 8bit library, then use GNU ar to combine all three libraries into libx265.a
