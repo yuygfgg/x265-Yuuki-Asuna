@@ -2982,7 +2982,7 @@ void Encoder::printSummary()
 
 void Encoder::fetchStats(x265_stats *stats, size_t statsSizeBytes, int layer)
 {
-    if (statsSizeBytes >= sizeof(stats))
+    if (statsSizeBytes >= sizeof(*stats))
     {
         stats->globalPsnrY = m_analyzeAll[layer].m_psnrSumY;
         stats->globalPsnrU = m_analyzeAll[layer].m_psnrSumU;
