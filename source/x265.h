@@ -1683,13 +1683,16 @@ typedef struct x265_param
      * Default is 0, which is recommended */
     int       cbQpOffset;
 
+    /* Interal value indicating if cbqpoffs is set by the user. */
+    int       cbQpOffsetSet;
+
     /* Generally a small signed integer which offsets the QP used to quantize
      * the Cr chroma residual (delta from luma QP specified by rate-control).
      * Default is 0, which is recommended */
     int       crQpOffset;
 
-    /* True if crQpOffset was set by user. */
-    int       bUserSetCrQpOffset;
+    /* Interal value indicating if crqpoffs is set by the user. */
+    int       crQpOffsetSet;
 
 	/* Specifies the preferred transfer characteristics syntax element in the
 	 * alternative transfer characteristics SEI message (see. D.2.38 and D.3.38 of
@@ -1705,7 +1708,7 @@ typedef struct x265_param
 
     int opts;
 
-    bool bStylish;
+    int bStylish;
 
     struct
     {
@@ -2699,6 +2702,7 @@ typedef struct x265_api
     void          (*encoder_get_stats)(x265_encoder*, x265_stats*, uint32_t);
     void          (*encoder_log)(x265_encoder*, int, char**);
     void          (*encoder_close)(x265_encoder*);
+    int           (*encoder_get_errors)(void);
     void          (*cleanup)(void);
 
     int           sizeof_frame_stats;   /* sizeof(x265_frame_stats) */

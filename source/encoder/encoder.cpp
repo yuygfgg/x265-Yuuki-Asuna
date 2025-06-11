@@ -2798,6 +2798,9 @@ void Encoder::printSummary()
                 (float)100.0 * (m_rateControl->m_numEntries - m_rpsInSpsCount) / m_rateControl->m_numEntries);
         }
 
+        if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
+            x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
+
         if (m_analyzeAll[layer].m_numPics)
         {
             int p = 0;
@@ -2974,9 +2977,6 @@ void Encoder::printSummary()
 #undef ELAPSED_SEC
 #undef ELAPSED_MSEC
 #endif
-
-        if (m_param->totalFrames && (uint32_t)m_param->totalFrames > m_analyzeAll[layer].m_numPics)
-            x265_log(m_param, X265_LOG_ERROR, "not all %d frames encoded.\n", m_param->totalFrames);
     }
 }
 
@@ -3796,10 +3796,8 @@ void Encoder::configureDolbyVisionParams(x265_param* p)
     if (dovi[doviProfile].doviProfileId == 81)
         p->bEmitHDR10SEI = p->bEmitCLL = 1;
 
-    if (dovi[doviProfile].doviProfileId == 50 && !p->bUserSetCrQpOffset)
-    {
+    if (dovi[doviProfile].doviProfileId == 50 && !p->crQpOffsetSet)
         p->crQpOffset = 3;
-    }
 }
 
 void Encoder::configureVideoSignalTypePreset(x265_param* p)
@@ -3957,7 +3955,7 @@ void Encoder::configure(x265_param *p)
     /* In 444, chroma gets twice as much resolution, so halve quality when psy-rd is enabled */
     if (p->internalCsp == X265_CSP_I444 && p->psyRd)
     {
-        if (!p->cbQpOffset && !p->crQpOffset)
+        if (!p->cbQpOffset && !p->crQpOffset && !p->cbQpOffsetSet && !p->crQpOffsetSet)
         {
             p->cbQpOffset = MAX_CHROMA_QP_OFFSET / 2;
             p->crQpOffset = MAX_CHROMA_QP_OFFSET / 2;
@@ -5982,7 +5980,7 @@ void Encoder::writeAnalysisFile(x265_analysis_data* analysis, FrameData &curEncD
             /* Add sizeof depth, modes, partSize, cuQPOffset, mergeFlag */
             analysis->frameRecordSize += depthBytes * 2;
             if (m_param->rc.cuTree)
-            analysis->frameRecordSize += (sizeof(int8_t) * depthBytes);
+                analysis->frameRecordSize += (sizeof(int8_t) * depthBytes);
             if (m_param->analysisSaveReuseLevel > 4)
                 analysis->frameRecordSize += (depthBytes * 2);
 

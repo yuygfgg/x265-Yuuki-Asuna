@@ -35,6 +35,8 @@
 
 namespace X265_NS {
 
+volatile int numErrorsDuringEncoding = 0;
+
 #if CHECKED_BUILD || _DEBUG
 int g_checkFailures;
 #endif
@@ -102,6 +104,7 @@ int x265_exp2fix8(double x)
 
 void general_log(const x265_param* param, const char* caller, int level, const char* fmt, ...)
 {
+    if (level == X265_LOG_ERROR) numErrorsDuringEncoding++;
     if (param && level > param->logLevel && level > param->logfLevel)
         return;
     const int bufferSize = 4096;
@@ -145,8 +148,6 @@ void general_log(const x265_param* param, const char* caller, int level, const c
             fclose(fp);
         }
     }
-
-    if (level == X265_LOG_ERROR) exit(4);
 }
 
 #if _WIN32
@@ -154,6 +155,7 @@ void general_log(const x265_param* param, const char* caller, int level, const c
  * For other OS we do not make any changes. */
 void general_log_file(const x265_param* param, const char* caller, int level, const char* fmt, ...)
 {
+    if (level == X265_LOG_ERROR) numErrorsDuringEncoding++;
     if (param && level > param->logLevel)
         return;
     const int bufferSize = 4096;
@@ -200,8 +202,6 @@ void general_log_file(const x265_param* param, const char* caller, int level, co
     }
     else
         fputs(buffer, stderr);
-
-    if (level == X265_LOG_ERROR) exit(4);
 }
 
 FILE* x265_fopen(const char* fileName, const char* mode)

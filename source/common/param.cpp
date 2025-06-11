@@ -26,7 +26,6 @@
 #include "param.h"
 #include "cpu.h"
 #include "x265.h"
-#include <string>
 
 #if _MSC_VER
 #pragma warning(disable: 4996) // POSIX functions are just fine, thanks
@@ -276,6 +275,8 @@ void x265_param_default(x265_param* param)
     /* Coding Quality */
     param->cbQpOffset = 0;
     param->crQpOffset = 0;
+    param->cbQpOffsetSet = 0;
+    param->crQpOffsetSet = 0;
     param->rdPenalty = 0;
     param->psyRd = 2.0;
     param->psyRdoq = 0.0;
@@ -449,8 +450,6 @@ void x265_param_default(x265_param* param)
     param->bEnableSCC = 0;
 
     param->bConfigRCFrame = 0;
-
-    param->bUserSetCrQpOffset = false;
 }
 
 int x265_param_default_preset(x265_param* param, const char* preset, const char* tune)
@@ -759,7 +758,8 @@ int x265_param_default_preset(x265_param* param, const char* preset, const char*
             param->rc.qgSize = 8;
             param->cbQpOffset = -2; //better chroma quality to compensate 420 subsampling
             param->crQpOffset = -2; //better chroma quality to compensate 420 subsampling
-            param->bUserSetCrQpOffset = true;
+            param->crQpOffsetSet = true;
+            param->cbQpOffsetSet = true;
             param->rc.pbFactor = 1.2; //down from 1.3
             param->bEnableWeightedBiPred = 1;
             if (tune[0] == 'l') {
@@ -930,11 +930,10 @@ int x265_param_default_preset(x265_param* param, const char* preset, const char*
         }
         else if (!strncmp(tune,"vq",2)) // visual quality with help from vmaf
         {
-            std::string tune_s=tune;
             int vq_lvl=1;
-            if (tune_s.length()>2)
+            if (strlen(tune)>2)
             {
-                vq_lvl=std::stoi(tune_s.substr(2));
+                vq_lvl=atoi(tune+2);
             }
 
             // [[fallthrough]] is c++17 stuff? but GCC doesn't complaint so hell yea let's go
@@ -1380,12 +1379,15 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     OPT("limit-modes") p->limitModes = atobool(value);
     OPT("weightp") p->bEnableWeightedPred = atobool(value);
     OPT("weightb") p->bEnableWeightedBiPred = atobool(value);
-    OPT("cbqpoffs") p->cbQpOffset = atoi(value);
-    OPT("crqpoffs") 
+    OPT("cbqpoffs")
+    {
+        p->cbQpOffset = atoi(value);
+        p->cbQpOffsetSet = 1;
+    }
+    OPT("crqpoffs")
     {
         p->crQpOffset = atoi(value);
-        if (!bError)
-            p->bUserSetCrQpOffset = true;
+        p->crQpOffsetSet = 1;
     }
     OPT("rd") p->rdLevel = atoi(value);
     OPT2("rdoq", "rdoq-level")
@@ -3157,7 +3159,8 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->bLossless = src->bLossless;
     dst->cbQpOffset = src->cbQpOffset;
     dst->crQpOffset = src->crQpOffset;
-    dst->bUserSetCrQpOffset = src->bUserSetCrQpOffset;
+    dst->cbQpOffsetSet = src->cbQpOffsetSet;
+    dst->crQpOffsetSet = src->crQpOffsetSet;
     dst->preferredTransferCharacteristics = src->preferredTransferCharacteristics;
     dst->pictureStructure = src->pictureStructure;
 
