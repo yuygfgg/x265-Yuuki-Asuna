@@ -259,7 +259,7 @@ if(CC STREQUAL "xlc")
     add_definitions(-qinline=level=10 -qpath=IL:/data/video_files/latest.tpo/)
 endif()
 # this option is to enable the inclusion of dynamic HDR10 library to the libx265 compilation
-option(ENABLE_HDR10_PLUS "Enable dynamic HDR10 compilation" OFF)
+option(ENABLE_HDR10_PLUS "Enable dynamic HDR10 compilation" ON)
 option(ENABLE_AVISYNTH "Enable AviSynth input" OFF)
 option(ENABLE_VPYSYNTH "Enable VapourSynth input" ON)
 if(MSVC AND (MSVC_VERSION LESS 1800) AND ENABLE_HDR10_PLUS)
