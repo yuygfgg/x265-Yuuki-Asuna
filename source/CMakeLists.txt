@@ -23,6 +23,8 @@ include(CheckCXXSourceCompiles)
 
 set(CMAKE_CXX_STANDARD 11)
 
+set(CMAKE_CXX_STANDARD 17)
+
 option(FPROFILE_GENERATE "Compile executable to generate usage data" OFF)
 option(FPROFILE_USE "Compile executable using generated usage data" OFF)
 option(NATIVE_BUILD "Target the build CPU" ON)
@@ -855,6 +857,18 @@ if((MSVC_IDE OR XCODE OR GCC) AND ENABLE_ASSEMBLY)
                     OUTPUT ${ASM}.${SUFFIX}
                     COMMAND ${CMAKE_CXX_COMPILER}
                     ARGS ${ARM_ARGS} ${ASM_FLAGS} ${AARCH64_SVE2_FLAG} -c ${ASM_SRC} -o ${ASM}.${SUFFIX}
+                    DEPENDS ${ASM_SRC})
+            endforeach()
+        endif()
+        if(CPU_HAS_SVE2_BITPERM)
+            foreach(ASM ${ARM_ASMS_SVE2_BITPERM})
+                set(ASM_SRC ${CMAKE_CURRENT_SOURCE_DIR}/common/aarch64/${ASM})
+                list(APPEND ASM_SRCS ${ASM_SRC})
+                list(APPEND ASM_OBJS ${ASM}.${SUFFIX})
+                add_custom_command(
+                    OUTPUT ${ASM}.${SUFFIX}
+                    COMMAND ${CMAKE_CXX_COMPILER}
+                    ARGS ${ARM_ARGS} ${ASM_FLAGS} ${AARCH64_SVE2_BITPERM_FLAG} -c ${ASM_SRC} -o ${ASM}.${SUFFIX}
                     DEPENDS ${ASM_SRC})
             endforeach()
         endif()
