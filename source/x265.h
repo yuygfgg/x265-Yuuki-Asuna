@@ -560,6 +560,9 @@ typedef enum
 #define X265_CPU_NEON_I8MM       (1 << 6)   /* AArch64 Neon I8MM */
 #define X265_CPU_SVE2_BITPERM    (1 << 7)   /* AArch64 SVE2 BitPerm */
 
+/* RISCV */
+#define X265_CPU_RVV             (1 << 0)   /* RISCV vector */
+
 /* IBM Power8 */
 #define X265_CPU_ALTIVEC         0x0000001
 
@@ -1388,6 +1391,9 @@ typedef struct x265_param
      * should detect scene cuts for cost based scenecut detection. 
      * The default (40) is recommended. */
     int       scenecutThreshold;
+
+    /* Flash detection in scenecut */
+    int       bscenecutFlash;
 
     /* Replace keyframes by using a column of intra blocks that move across the video
      * from one side to the other, thereby "refreshing" the image. In effect, instead of a

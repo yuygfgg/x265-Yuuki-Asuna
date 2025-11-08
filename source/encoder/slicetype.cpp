@@ -3132,7 +3132,7 @@ void Lookahead::slicetypeAnalyse(Lowres **frames, bool bKeyframe)
 bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, int numFrames)
 {
     /* Only do analysis during a normal scenecut check. */
-    if (bRealScenecut && m_param->bframes)
+    if (bRealScenecut && m_param->bframes && !!m_param->bscenecutFlash)
     {
         int origmaxp1 = p0 + 1;
         /* Look ahead to avoid coding short flashes as scenecuts. */
@@ -3218,7 +3218,7 @@ bool Lookahead::scenecut(Lowres **frames, int p0, int p1, bool bRealScenecut, in
        analysis detected scenecuts which were later nulled due to scene transitioning, in which 
        case do not return a true scenecut for this frame */
 
-    if (!frames[p1]->bScenecut)
+    if (!frames[p1]->bScenecut && m_param->bframes && !!m_param->bscenecutFlash)
         return false;
 
     return scenecutInternal(frames, p0, p1, bRealScenecut);
@@ -3259,9 +3259,12 @@ bool Lookahead::scenecutInternal(Lowres **frames, int p0, int p1, bool bRealScen
     {
         int imb = frame->intraMbs[p1 - p0];
         int pmb = m_8x8Blocks - imb;
+        frame->bScenecut = true; // for csv log
         x265_log(m_param, X265_LOG_DEBUG, "scene cut at %d Icost:%d Pcost:%d ratio:%.4f bias:%.4f gop:%d (imb:%d pmb:%d)\n",
                  frame->frameNum, icost, pcost, 1. - (double)pcost / icost, bias, gopSize, imb, pmb);
     }
+    else if (bRealScenecut)
+        frame->bScenecut = false; // for csv log
     return res;
 }
 
@@ -3615,8 +3618,6 @@ void Lookahead::cuTree(Lowres **frames, int numframes, bool bIntra)
 
     x265_emms();
 
-    double averageDuration = (double)m_param->fpsDenom / m_param->fpsNum;
-
     int i = numframes;
 
     while (i > 0 && frames[i]->sliceType == X265_TYPE_B)
@@ -3675,39 +3676,39 @@ void Lookahead::cuTree(Lowres **frames, int numframes, bool bIntra)
                 if (i != middle)
                 {
                     estGroup.singleCost(p0, p1, i);
-                    estimateCUPropagate(frames, averageDuration, p0, p1, i, 0);
+                    estimateCUPropagate(frames, p0, p1, i, 0);
                 }
                 i--;
             }
 
-            estimateCUPropagate(frames, averageDuration, curnonb, lastnonb, middle, 1);
+            estimateCUPropagate(frames, curnonb, lastnonb, middle, 1);
         }
         else
         {
             while (i > curnonb)
             {
                 estGroup.singleCost(curnonb, lastnonb, i);
-                estimateCUPropagate(frames, averageDuration, curnonb, lastnonb, i, 0);
+                estimateCUPropagate(frames, curnonb, lastnonb, i, 0);
                 i--;
             }
         }
-        estimateCUPropagate(frames, averageDuration, curnonb, lastnonb, lastnonb, 1);
+        estimateCUPropagate(frames, curnonb, lastnonb, lastnonb, 1);
         lastnonb = curnonb;
     }
 
     if (!m_param->lookaheadDepth)
     {
         estGroup.singleCost(0, lastnonb, lastnonb);
-        estimateCUPropagate(frames, averageDuration, 0, lastnonb, lastnonb, 1);
+        estimateCUPropagate(frames, 0, lastnonb, lastnonb, 1);
         std::swap(frames[lastnonb]->propagateCost, frames[0]->propagateCost);
     }
 
-    cuTreeFinish(frames[lastnonb], averageDuration, lastnonb);
+    cuTreeFinish(frames[lastnonb], lastnonb);
     if (m_param->bBPyramid && bframes > 1 && !m_param->rc.vbvBufferSize)
-        cuTreeFinish(frames[lastnonb + (bframes + 1) / 2], averageDuration, 0);
+        cuTreeFinish(frames[lastnonb + (bframes + 1) / 2], 0);
 }
 
-void Lookahead::estimateCUPropagate(Lowres **frames, double averageDuration, int p0, int p1, int b, int referenced)
+void Lookahead::estimateCUPropagate(Lowres **frames, int p0, int p1, int b, int referenced)
 {
     uint16_t *refCosts[2] = { frames[p0]->propagateCost, frames[p1]->propagateCost };
     int32_t distScaleFactor = (((b - p0) << 8) + ((p1 - p0) >> 1)) / (p1 - p0);
@@ -3720,7 +3721,7 @@ void Lookahead::estimateCUPropagate(Lowres **frames, double averageDuration, int
     uint16_t *propagateCost = frames[b]->propagateCost;
 
     x265_emms();
-    double fpsFactor = CLIP_DURATION((double)m_param->fpsDenom / m_param->fpsNum) / CLIP_DURATION(averageDuration);
+    double fpsFactor = 1.0;
 
     /* For non-referred frames the source costs are always zero, so just memset one row and re-use it. */
     if (!referenced)
@@ -3812,12 +3813,12 @@ void Lookahead::estimateCUPropagate(Lowres **frames, double averageDuration, int
     }
 
     if (m_param->rc.vbvBufferSize && m_param->lookaheadDepth && referenced)
-        cuTreeFinish(frames[b], averageDuration, b == p1 ? b - p0 : 0);
+        cuTreeFinish(frames[b], b == p1 ? b - p0 : 0);
 }
 
-void Lookahead::computeCUTreeQpOffset(Lowres *frame, double averageDuration, int ref0Distance)
+void Lookahead::computeCUTreeQpOffset(Lowres *frame, int ref0Distance)
 {
-    int fpsFactor = (int)(CLIP_DURATION(averageDuration) / CLIP_DURATION((double)m_param->fpsDenom / m_param->fpsNum) * 256);
+    int fpsFactor = 256;
     uint32_t loopIncr = (m_param->rc.qgSize == 8) ? 8 : 16;
 
     double weightdelta = 0.0;
@@ -3955,15 +3956,15 @@ void Lookahead::computeCUTreeQpOffset(Lowres *frame, double averageDuration, int
     }
 }
 
-void Lookahead::cuTreeFinish(Lowres *frame, double averageDuration, int ref0Distance)
+void Lookahead::cuTreeFinish(Lowres *frame, int ref0Distance)
 {
     if (m_param->rc.hevcAq)
     {
-        computeCUTreeQpOffset(frame, averageDuration, ref0Distance);
+        computeCUTreeQpOffset(frame, ref0Distance);
     }
     else
     {
-        int fpsFactor = (int)(CLIP_DURATION(averageDuration) / CLIP_DURATION((double)m_param->fpsDenom / m_param->fpsNum) * 256);
+        int fpsFactor = 256;
         double weightdelta = 0.0;
 
         if (ref0Distance && frame->weightedCostDelta[ref0Distance - 1] > 0)
