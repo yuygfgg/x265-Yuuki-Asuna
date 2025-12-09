@@ -3402,6 +3402,9 @@ void Encoder::getStreamHeaders(NALList& list, Entropy& sbacCoder, Bitstream& bs)
 
     if (m_param->bEmitInfoSEI)
     {
+        if (m_param->opts & 4) // 0b100
+            if (m_param->bRepeatHeaders)
+                m_param->bEmitInfoSEI = 0;
         char *opts = x265_param2string(m_param, m_sps.conformanceWindow.rightOffset, m_sps.conformanceWindow.bottomOffset);
         if (opts)
         {
@@ -4671,8 +4674,7 @@ void Encoder::configure(x265_param *p)
     {
         if (m_param->sourceHeight < 540)
         {
-            x265_log(p, X265_LOG_WARNING, "Source height < 540p is too low for HME. Disabling HME.\n");
-            p->bEnableHME = 0;
+            x265_log(p, X265_LOG_WARNING, "Source height < 540p may be too low for HME.\n");
         }
     }
 
