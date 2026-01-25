@@ -562,6 +562,7 @@ typedef enum
 
 /* RISCV */
 #define X265_CPU_RVV             (1 << 0)   /* RISCV vector */
+#define X265_CPU_ZBB             (1 << 1)   /* RISCV zbb */
 
 /* IBM Power8 */
 #define X265_CPU_ALTIVEC         0x0000001
@@ -2716,6 +2717,7 @@ typedef struct x265_api
     void          (*encoder_log)(x265_encoder*, int, char**);
     void          (*encoder_close)(x265_encoder*);
     int           (*encoder_get_errors)(void);
+    int           (*encoder_check_params)(x265_param*);
     void          (*cleanup)(void);
 
     int           sizeof_frame_stats;   /* sizeof(x265_frame_stats) */
