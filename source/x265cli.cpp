@@ -60,10 +60,24 @@ namespace X265_NS {
     static void showHelp(x265_param *param)
     {
         int level = param->logLevel;
+        int bufsize = 1048576, bufwritten = 0;
+        char *buf;
+        CHECKED_MALLOC_ZERO(buf, char, bufsize);
 
 #define OPT(value) (value ? "enabled" : "disabled")
-#define H0 printf
-#define H1 if (level >= X265_LOG_DEBUG) printf
+#define H0(...) bufwritten += snprintf(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
+#define H1(...) if (level >= X265_LOG_DEBUG) bufwritten += snprintf(buf + bufwritten, bufsize - bufwritten, __VA_ARGS__)
+
+#ifdef ENABLE_LSMASH
+#define LSMASH_OUTPUT_EXT ", MP4 if *.mp4"
+#else
+#define LSMASH_OUTPUT_EXT ""
+#endif
+#ifdef ENABLE_MKV
+#define MKV_OUTPUT_EXT ", MKV if *.mkv"
+#else
+#define MKV_OUTPUT_EXT ""
+#endif
 
         H0("\nSyntax: x265 [options] infile [-o] outfile\n");
         H0("    infile can be YUV or Y4M, or frame server format\n");
@@ -73,14 +87,7 @@ namespace X265_NS {
         H0("   --fullhelp                    Show all options and exit\n");
         H0("-V/--version                     Show version info and exit\n");
         H0("\nOutput Options:\n");
-        H0("-o/--output <filename>           Output file name. Default is raw bitstream"
-#ifdef ENABLE_LSMASH
-            ", MP4 if *.mp4"
-#endif
-#ifdef ENABLE_MKV
-            ", MKV if *.mkv"
-#endif
-            "\n");
+        H0("-o/--output <filename>           Output file name. Default is raw bitstream" LSMASH_OUTPUT_EXT MKV_OUTPUT_EXT "\n");
         H0("-D/--output-depth 8|10|12        Output bit depth (also internal bit depth). Default %d\n", param->internalBitDepth);
         H0("   --log-level <string>          Logging level: none error warning info debug full. Default %s\n", X265_NS::logLevelNames[param->logLevel + 1]);
         H1("   --log-file <filename>         Save log to file\n" );
@@ -484,9 +491,20 @@ namespace X265_NS {
 #undef OPT
 #undef H0
 #undef H1
+#undef LSMASH_OUTPUT_EXT
+#undef MKV_OUTPUT_EXT
+
+#ifndef _WIN32
+        printf("%s", buf);
+#else
+        printf_s("%s", buf);
+#endif
         if (level < X265_LOG_DEBUG)
             printf("\nUse --fullhelp for a full listing (or --log-level full --help)\n");
         printf("\n\nComplete documentation may be found at http://x265.readthedocs.org/en/default/cli.html\n");
+        X265_FREE_ZERO(buf);
+        exit(0);
+    fail:
         exit(1);
     }
 
@@ -670,8 +688,10 @@ namespace X265_NS {
 
         if (bShowHelp)
         {
+            fputc('\n', stderr);
             printVersion(globalParam, api);
-            showHelp(globalParam);
+            fprintf(stderr, "\nUse %s --fullhelp for help\n", argv[0]);
+            exit(1);
         }
 
         if (!globalParam->rc.zones[zonefileCount].zoneParam)
@@ -824,8 +844,10 @@ namespace X265_NS {
 
         if (bShowHelp)
         {
+            fputc('\n', stderr);
             printVersion(param, api);
-            showHelp(param);
+            fprintf(stderr, "\nUse %s --fullhelp for help\n", argv[0]);
+            exit(1);
         }
 
         //Set enable SVT-HEVC encoder first if found in the command line
@@ -988,8 +1010,10 @@ namespace X265_NS {
         if (argc <= 1)
         {
             api->param_default(param);
+            fputc('\n', stderr);
             printVersion(param, api);
-            showHelp(param);
+            fprintf(stderr, "\nNo parameter, use %s --fullhelp for help\n", argv[0]);
+            exit(1);
         }
 
 #if ENABLE_MULTIVIEW
@@ -1446,8 +1470,10 @@ namespace X265_NS {
         }
         if (bShowHelp)
         {
+            fputc('\n', stderr);
             printVersion(globalParam, api);
-            showHelp(globalParam);
+            fprintf(stderr, "\nUse %s --fullhelp for help\n", argv[0]);
+            exit(1);
         }
         for (optind = 0;;)
         {
